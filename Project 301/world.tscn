@@ -1,0 +1,128 @@
+[gd_scene load_steps=15 format=3 uid="uid://b8v4dxncivi5a"]
+
+[ext_resource type="Script" uid="uid://d13ht5nloumea" path="res://player.gd" id="1_fj7yv"]
+[ext_resource type="Texture2D" uid="uid://b1cathw6mqsjt" path="res://icon.svg" id="1_tlwt5"]
+[ext_resource type="Texture2D" uid="uid://dkr3ocjbt28qg" path="res://lotti.png" id="2_tlwt5"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_fj7yv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tlwt5"]
+size = Vector2(242, 21.0142)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gs6va"]
+size = Vector2(24, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gbfbk"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fj7yv"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tlwt5"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqk2v"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_036b0"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(0, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dwbse"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(64, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pkg7o"]
+atlas = ExtResource("2_tlwt5")
+region = Rect2(128, 64, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wse8f"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gbfbk")
+}],
+"loop": true,
+"name": &"lotti_idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fj7yv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tlwt5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aqk2v")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_036b0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dwbse")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pkg7o")
+}],
+"loop": true,
+"name": &"lotti_run_right",
+"speed": 5.0
+}]
+
+[node name="World" type="Node2D"]
+position = Vector2(319, 241)
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="Hud"]
+offset_left = 15.0
+offset_top = 581.0
+offset_right = 102.0
+offset_bottom = 638.0
+text = "Label"
+
+[node name="Foreground" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="StaticBody2D" type="StaticBody2D" parent="Foreground"]
+y_sort_enabled = true
+position = Vector2(15, -15)
+physics_material_override = SubResource("PhysicsMaterial_fj7yv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Foreground/StaticBody2D"]
+y_sort_enabled = true
+position = Vector2(-27, 27.5071)
+shape = SubResource("RectangleShape2D_tlwt5")
+
+[node name="Sprite2D" type="Sprite2D" parent="Foreground/StaticBody2D"]
+position = Vector2(-30, 28)
+scale = Vector2(1.96875, 0.507812)
+texture = ExtResource("1_tlwt5")
+offset = Vector2(0, -30)
+
+[node name="Player" type="CharacterBody2D" parent="Foreground"]
+y_sort_enabled = true
+position = Vector2(-287, -167)
+script = ExtResource("1_fj7yv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Foreground/Player"]
+y_sort_enabled = true
+position = Vector2(1, 26)
+shape = SubResource("RectangleShape2D_gs6va")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Foreground/Player"]
+position = Vector2(6, 19)
+sprite_frames = SubResource("SpriteFrames_wse8f")
+animation = &"lotti_idle_right"
+autoplay = "lotti_idle_right"
+frame_progress = 0.266266
+offset = Vector2(0, -20)
+
+[node name="Camera2D" type="Camera2D" parent="Foreground/Player"]
+position = Vector2(-1, -23)
+zoom = Vector2(2, 2)
