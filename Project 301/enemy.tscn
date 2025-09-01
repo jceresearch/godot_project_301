@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3 uid="uid://p63x82wah7ib"]
+
+[ext_resource type="Script" uid="uid://db6tuapg47pdy" path="res://enemy.gd" id="1_eisvs"]
+[ext_resource type="Texture2D" uid="uid://b1cathw6mqsjt" path="res://icon.svg" id="2_stl56"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wse8f"]
+size = Vector2(2, 1.25)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gbfbk"]
+radius = 2.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4gyqm"]
+size = Vector2(2, 2)
+
+[node name="Enemy" type="CharacterBody2D"]
+motion_mode = 1
+wall_min_slide_angle = 0.262403
+script = ExtResource("1_eisvs")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.0212403, 0.0177307)
+texture = ExtResource("2_stl56")
+
+[node name="FeetCollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0.625)
+shape = SubResource("RectangleShape2D_wse8f")
+
+[node name="DamageArea2D" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea2D"]
+shape = SubResource("CircleShape2D_gbfbk")
+
+[node name="BodyArea2D" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BodyArea2D"]
+shape = SubResource("RectangleShape2D_4gyqm")
