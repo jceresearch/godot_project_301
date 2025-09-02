@@ -2,7 +2,7 @@ extends Node2D
 @export var enemy_scene: PackedScene
 @export var pool_size: int = 50
 @export var max_active_enemies: int = 3
-@export var spawn_interval: float = 10
+@export var spawn_interval: float = 3
 @export var spawn_radius: float = 500.0
 var enemy_pool: Array[Node] = []
 var active_enemies: Array[Node] = []
@@ -43,6 +43,7 @@ func spawn_enemy() -> Node:
 	enemy.visible = true
 	enemy.set_physics_process(true)
 	enemy.set_process(true)
+	enemy.scale= enemy.INITIAL_SCALE
 	if enemy.has_method("reset_enemy"):
 		enemy.reset_enemy()
 	active_enemies.append(enemy)

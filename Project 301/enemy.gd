@@ -9,6 +9,7 @@ signal enemy_died(enemy)
 var MAX_HEALTH: float = 100.0
 var SPEED: float = 10.0
 var DAMAGE: float = 25.0
+var INITIAL_SCALE:  Vector2= Vector2(.5,.5)
 
 # Current stats
 
@@ -50,9 +51,9 @@ func _physics_process(_delta):
 
 	# Face the player (optional)
 	if direction.x < 0:
-		sprite.scale.x = -1
+		sprite.scale.x = -1 * sprite.scale.x
 	else:
-		sprite.scale.x = 1
+		sprite.scale.x = 1 * sprite.scale.x
 
 
 func reset_enemy():
@@ -62,7 +63,7 @@ func reset_enemy():
 	velocity = Vector2.ZERO
 	if sprite:
 		sprite.modulate = Color.WHITE
-		sprite.scale = Vector2.ONE
+		sprite.scale = INITIAL_SCALE
 		collision_shape_body.disabled = false
 		collision_shape_body.disabled = false
 		
@@ -127,4 +128,3 @@ func _on_area_2d_area_entered(area):
 			area.destroy()
 		else:
 			area.queue_free()
-

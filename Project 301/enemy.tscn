@@ -4,37 +4,40 @@
 [ext_resource type="Texture2D" uid="uid://b1cathw6mqsjt" path="res://icon.svg" id="2_stl56"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wse8f"]
-size = Vector2(2, 1.25)
+size = Vector2(140, 37.5)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_gbfbk"]
-radius = 2.0
+radius = 107.856
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_4gyqm"]
-size = Vector2(2, 2)
+size = Vector2(141, 123)
 
 [node name="Enemy" type="CharacterBody2D"]
+collision_layer = 8
+collision_mask = 8
 motion_mode = 1
 wall_min_slide_angle = 0.262403
 script = ExtResource("1_eisvs")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.0212403, 0.0177307)
 texture = ExtResource("2_stl56")
 
 [node name="FeetCollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 0.625)
+y_sort_enabled = true
+position = Vector2(0, 41.75)
 shape = SubResource("RectangleShape2D_wse8f")
 
 [node name="DamageArea2D" type="Area2D" parent="."]
-collision_layer = 4
+collision_layer = 0
 collision_mask = 4
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea2D"]
 shape = SubResource("CircleShape2D_gbfbk")
 
 [node name="BodyArea2D" type="Area2D" parent="."]
-collision_layer = 2
-collision_mask = 2
+collision_layer = 10
+collision_mask = 10
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BodyArea2D"]
+position = Vector2(-1.5, -0.5)
 shape = SubResource("RectangleShape2D_4gyqm")
