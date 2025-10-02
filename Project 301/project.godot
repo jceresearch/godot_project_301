@@ -66,7 +66,7 @@ renderer/rendering_method="mobile"
 [xogot]
 
 project/editorState=[{
-"column": 29,
+"column": 0,
 "line": 47,
 "path": "res://enemy.gd",
 "type": "file"
@@ -76,7 +76,7 @@ project/editorState=[{
 "path": "res://enemy_spawner.gd",
 "type": "file"
 }, {
-"column": 23,
+"column": 0,
 "line": 70,
 "path": "res://player.gd",
 "type": "file"
@@ -86,7 +86,7 @@ project/editorState=[{
 "path": "res://static_body_2d.gd",
 "type": "file"
 }, {
-"column": 3,
+"column": 0,
 "current": true,
 "line": 15,
 "path": "res://hud.gd",
