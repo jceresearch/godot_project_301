@@ -5,8 +5,11 @@ extends CharacterBody2D
 @onready var hurtbox: Area2D = $Hurtbox  # This is what enemies will detect
 var MAX_SPEED: float = 3000.0
 var MIN_SPEED: float=100.0
-var ACCELERATION: float=1.01
+var ACCELERATION_FACTOR: float=1.01 # coefficient for the acceleration curve
+var DRAG_FACTOR: float=.99 # coefficient for the deacceleration curve
 var current_speed: float=0.0
+var current_drag: float=0.0
+var current_acceleration: float = 0.0
 
 # Player stats
 @export var MAX_HEALTH: float = 100.0
@@ -47,6 +50,27 @@ var LOWER_MAGNITUDE: float = 100.0
 
 @onready var DEFAULT_MODULATE_COLOR: Color
 
+func increase_acceleration(increase)->float:
+	if increase==null:
+		current_acceleration=1
+		return current_acceleration
+	if increase and current_acceleration>0:
+		current_acceleration=current_acceleration*ACCELERATION_FACTOR
+	else:
+		current_acceleration=ACCELERATION_FACTOR
+	return current_acceleration
+	
+func increase_drag(increase)->float:
+	if increase==null:
+		current_drag=1
+		return current_drag
+	if increase and current_drag>0:
+		current_drag=current_drag*DRAG_FACTOR
+	else:
+		current_drag=DRAG_FACTOR
+	return current_drag
+
+
 func _ready():
 	self.add_to_group("player")
 	current_health = MAX_HEALTH
@@ -69,54 +93,66 @@ func _physics_process(_delta: float) -> void:
 	if Input.is_action_just_pressed("reset_position"):
 		global_position=Vector2i(0,0)
 		velocity=Vector2(0,0)
+		current_speed=0
+		increase_drag(null)
+		increase_acceleration(null)
+		return
+		
 	if dir.length() > 1.0:
 		dir = dir.normalized() #  so diagonals aren't faster
 		
 	if Input.is_action_just_pressed("dash") and not _is_dashing and dir != Vector2.ZERO and Time.get_unix_time_from_system() >= _dash_ready_at:
 		_do_dash(dir)
+	
 		
-	current_speed=clamp(current_speed * ACCELERATION ,MIN_SPEED,MAX_SPEED)
 	# If dashing, give the speed a stronger push while the dash is active
 	if _is_dashing:
 		current_speed = clamp(current_speed * DASH_MULTIPLIER, MIN_SPEED, MAX_SPEED)
-	velocity = dir * current_speed
-	hud.update_speed_display(current_speed,_is_dashing)
-	move_and_slide()
+	else:
+		current_speed= clamp(current_speed * current_acceleration * current_drag ,MIN_SPEED,MAX_SPEED)
 
-	# Animate
+	
+	
+	
 	if dir == Vector2.ZERO:
 		_play_if_needed("lotti_idle_right") # pick your default idle
 		anim.speed_scale = 1.0
-		current_speed=0
-		return
-
-	# Pick facing by the dominant axis
-	if abs(dir.x) > abs(dir.y):
-		if dir.x > 0.0:
-			_play_if_needed("lotti_run_right")
-		else:
-			
-			_play_if_needed("lotti_run_right",true)
+		
 	else:
-		if dir.y > 0.0:
-			_play_if_needed("lotti_run_front")
+		# Pick facing by the dominant axis
+		if abs(dir.x) > abs(dir.y):
+			if dir.x > 0.0:
+				_play_if_needed("lotti_run_right")
+			else:
+				
+				_play_if_needed("lotti_run_right",true)
 		else:
-			_play_if_needed("lotti_run_up")
+			if dir.y > 0.0:
+				_play_if_needed("lotti_run_front")
+			else:
+				_play_if_needed("lotti_run_up")
 
-	# Scale FPS with movement speed
-	var vel_magnitude := velocity.length()
-	#anim.speed_scale = anim_speed_base + vel_magnitude * anim_speed_factor
-	#var K := 100	# steepness factor
-	#anim.speed_scale = anim_speed_base + (1.0 / (1.0 + exp(-k * (vel_magnitude - 500.0)))) * anim_speed_factor * 10.0 # s curve
-	#anim.speed_scale = anim_speed_base + log(1.0 + K+vel_magnitude) * anim_speed_factor # logarithmic
-	var span= (UPPER_MAGNITUDE-LOWER_MAGNITUDE) * .8 #slight overshoot in span acceleration
-	if vel_magnitude < LOWER_MAGNITUDE:
-		anim.speed_scale = ANIM_SPEED_BASE
-	elif vel_magnitude < UPPER_MAGNITUDE:
-		anim.speed_scale = lerp(ANIM_SPEED_BASE,ANIM_SPEED_TOP_FACTOR , (vel_magnitude - LOWER_MAGNITUDE) / span)
-	else:
-		anim.speed_scale = UPPER_MAGNITUDE
+
+
+		# Scale FPS with movement speed
+		var vel_magnitude := velocity.length()
+		#anim.speed_scale = anim_speed_base + vel_magnitude * anim_speed_factor
+		#var K := 100	# steepness factor
+		#anim.speed_scale = anim_speed_base + (1.0 / (1.0 + exp(-k * (vel_magnitude - 500.0)))) * anim_speed_factor * 10.0 # s curve
+		#anim.speed_scale = anim_speed_base + log(1.0 + K+vel_magnitude) * anim_speed_factor # logarithmic
+		var span= (UPPER_MAGNITUDE-LOWER_MAGNITUDE) * .8 #slight overshoot in span acceleration
+		if vel_magnitude < LOWER_MAGNITUDE:
+			anim.speed_scale = ANIM_SPEED_BASE
+		elif vel_magnitude < UPPER_MAGNITUDE:
+			anim.speed_scale = lerp(ANIM_SPEED_BASE,ANIM_SPEED_TOP_FACTOR , (vel_magnitude - LOWER_MAGNITUDE) / span)
+		else:
+			anim.speed_scale = UPPER_MAGNITUDE
+		
+	hud.update_speed_display(current_speed,_is_dashing)
 	
+	
+	velocity = dir * current_speed
+	move_and_slide()
 	
 	
 	
