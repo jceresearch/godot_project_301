@@ -1,43 +1,52 @@
-[gd_scene load_steps=6 format=3 uid="uid://p63x82wah7ib"]
+[gd_scene format=3 uid="uid://p63x82wah7ib"]
 
-[ext_resource type="Script" uid="uid://db6tuapg47pdy" path="res://enemy.gd" id="1_eisvs"]
+[ext_resource type="Script" uid="uid://7jt00bjyeuty" path="res://enemy.gd" id="1_qi2p4"]
 [ext_resource type="Texture2D" uid="uid://b1cathw6mqsjt" path="res://icon.svg" id="2_stl56"]
+[ext_resource type="Script" uid="uid://cvc0ib5fmoqis" path="res://hurt_box.gd" id="3_iifgy"]
+[ext_resource type="Script" uid="uid://cr4gq0vgq7gx4" path="res://hit_box.gd" id="3_qi2p4"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gbfbk"]
+radius = 71.84706
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_iifgy"]
+size = Vector2(174.2433, 143.24579)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wse8f"]
 size = Vector2(140, 37.5)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_gbfbk"]
-radius = 107.856
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_4gyqm"]
-size = Vector2(141, 123)
-
-[node name="Enemy" type="CharacterBody2D"]
+[node name="Enemy" type="CharacterBody2D" unique_id=955041958]
 collision_layer = 8
-collision_mask = 8
+collision_mask = 7
 motion_mode = 1
-wall_min_slide_angle = 0.262403
-script = ExtResource("1_eisvs")
+wall_min_slide_angle = 0.26209256
+safe_margin = 0.001
+script = ExtResource("1_qi2p4")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=518595334]
 texture = ExtResource("2_stl56")
 
-[node name="FeetCollisionShape2D" type="CollisionShape2D" parent="."]
-y_sort_enabled = true
-position = Vector2(0, 41.75)
-shape = SubResource("RectangleShape2D_wse8f")
+[node name="HurtBox" type="Area2D" parent="." unique_id=476088940 node_paths=PackedStringArray("parent_entity")]
+collision_layer = 32
+collision_mask = 64
+script = ExtResource("3_iifgy")
+parent_entity = NodePath("..")
 
-[node name="DamageArea2D" type="Area2D" parent="."]
-collision_layer = 0
-collision_mask = 4
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox" unique_id=1301259619]
 shape = SubResource("CircleShape2D_gbfbk")
 
-[node name="BodyArea2D" type="Area2D" parent="."]
-collision_layer = 10
-collision_mask = 10
+[node name="HitBox" type="Area2D" parent="." unique_id=310323402]
+position = Vector2(0, 41.75)
+collision_layer = 128
+collision_mask = 0
+script = ExtResource("3_qi2p4")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="BodyArea2D"]
-position = Vector2(-1.5, -0.5)
-shape = SubResource("RectangleShape2D_4gyqm")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitBox" unique_id=1830851853]
+position = Vector2(-1.2367009, -42.140278)
+rotation = -0.007163547
+scale = Vector2(0.6750302, 0.83511144)
+shape = SubResource("RectangleShape2D_iifgy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2061669923]
+y_sort_enabled = true
+position = Vector2(-2, 46)
+shape = SubResource("RectangleShape2D_wse8f")

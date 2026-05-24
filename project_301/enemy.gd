@@ -1,4 +1,5 @@
 # Enemy.gd
+class_name Enemy
 extends CharacterBody2D
 
 # Signals
@@ -6,9 +7,9 @@ extends CharacterBody2D
 signal enemy_died(enemy)
 
 # Enemy stats
-var MAX_HEALTH: float = 100.0
-var SPEED: float = 10.0
-var DAMAGE: float = 25.0
+var MAX_HEALTH: float = 50.0
+var SPEED: float = 1.0
+var DAMAGE_INFLICT: float = 25.0 # what this enemy inflicts on player, for now constant
 var INITIAL_SCALE:  Vector2= Vector2(.5,.5)
 
 # Current stats
@@ -20,23 +21,24 @@ var is_alive: bool = true
 
 var player: Node2D
 var sprite: Sprite2D
-var collision_shape_body: CollisionShape2D
-var collision_shape_feet: CollisionShape2D
+var bumpbox: CollisionShape2D
+var hitbox: Area2D
+var hurtbox: Area2D
 func _ready():
 	# Get node references
 	add_to_group("enemy")
 	sprite = get_node("Sprite2D") # Adjust path as needed
-	collision_shape_body = get_node("BodyArea2D/CollisionShape2D")
-	collision_shape_feet= get_node("FeetCollisionShape2D") 
-	player = get_tree().get_first_node_in_group("player")
-	var damage_area: Area2D = get_node_or_null("DamageArea2D")
-	
-	if damage_area:
-		damage_area.y_sort_enabled = false
-		damage_area.body_entered.connect(_on_area_2d_body_entered)
-		damage_area.area_entered.connect(_on_area_2d_area_entered)
+	bumpbox= get_node("CollisionShape2D") 
+	player = GameManager.player
+	hurtbox= get_node_or_null("HurtBox")
+	hitbox= get_node_or_null("HitBox")
+	if hitbox and hurtbox:
+		hitbox.y_sort_enabled = false
+		# enemy touches player or other npc
+		hitbox.body_entered.connect(_on_area_2d_body_entered)
+		
 	else:
-		print("Debug, didn't find damage area'")
+		print("Debug, didn't find enemy hitbox or hurtbox")
 	reset_enemy()
 	
 
@@ -64,8 +66,8 @@ func reset_enemy():
 	if sprite:
 		sprite.modulate = Color.WHITE
 		sprite.scale = INITIAL_SCALE
-		collision_shape_body.disabled = false
-		collision_shape_body.disabled = false
+		bumpbox.disabled = false
+
 		
 
 func take_damage(amount: float):
@@ -95,8 +97,7 @@ func die():
 		tween.parallel().tween_property(sprite, "scale", Vector2.ZERO, 0.3)
 		tween.parallel().tween_property(sprite, "modulate", Color.TRANSPARENT, 0.3)
 
-	collision_shape_body.disabled = true
-	collision_shape_feet.disabled=true
+	bumpbox.disabled = true
 	# Emit death signal for pooling system
 	enemy_died.emit(self)
 
@@ -106,25 +107,15 @@ func get_health_percentage() -> float:
 	return current_health / MAX_HEALTH
 
 func _on_area_2d_body_entered(body):
-	#event for when 2d body (player) enters the damage area of the enemy
+	#event for when 2d body (player) enters the hitbox area of the enemy
 	if body.is_in_group("player") and is_alive:
 		print("player entered area 2d and will take damage")
 		if body.has_method("take_damage"):
 			print("enemy is calling body.take_damage()")
-			body.take_damage(DAMAGE)
+			body.take_damage(DAMAGE_INFLICT)
 			# Optionally die after hitting player
 			# die()
-	
-func _on_area_2d_area_entered(area):
-	#If projectiles use Area2D”””
-	if area.is_in_group("player_projectile") and is_alive:
-		print("area2d entered damage area")
-		var projectile_damage = 50.0 # Or get from projectile
-		if area.has_method("get_damage"):
-			projectile_damage = area.get_damage()
-		take_damage(projectile_damage)
-		# Destroy projectile
-		if area.has_method("destroy"):
-			area.destroy()
-		else:
-			area.queue_free()
+
+
+		
+

@@ -7,7 +7,7 @@ extends Node2D
 var enemy_pool: Array[Node] = []
 var active_enemies: Array[Node] = []
 var spawn_timer: Timer
-@onready var player: Node2D
+
 
 func _ready():
 	initialize_pool()
@@ -16,7 +16,7 @@ func _ready():
 	spawn_timer.wait_time = spawn_interval
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
 	spawn_timer.start()
-	player = get_tree().get_first_node_in_group("player")
+	
 
 func initialize_pool():
 	if not enemy_scene:
@@ -24,34 +24,69 @@ func initialize_pool():
 		return
 	for i in range(pool_size):
 		var enemy = enemy_scene.instantiate()
+		_toggle_enemy_physics(enemy, false)
 		add_child(enemy)
-		# Connect enemy death signal
 		if enemy.has_signal("enemy_died"):
 			enemy.enemy_died.connect(_on_enemy_died)
-		enemy.set_physics_process(false)
-		enemy.set_process(false)
-		enemy.visible = false
+		
+		# Deactivate physics completely at start
+		
 		enemy_pool.append(enemy)
-
 
 func spawn_enemy() -> Node:
 	if enemy_pool.is_empty() or active_enemies.size() >= max_active_enemies:
 		return null
 	var enemy = enemy_pool.pop_back()
-	var spawn_position = get_spawn_position()
-	enemy.global_position = spawn_position
-	enemy.visible = true
-	enemy.set_physics_process(true)
-	enemy.set_process(true)
-	enemy.scale= enemy.INITIAL_SCALE
+	
+	# Set position BEFORE turning physics back on
+	enemy.global_position = get_spawn_position()
+	_toggle_enemy_physics(enemy, true)
+	
+	enemy.scale = enemy.INITIAL_SCALE
 	if enemy.has_method("reset_enemy"):
 		enemy.reset_enemy()
 	active_enemies.append(enemy)
 	return enemy
 
+func return_enemy_to_pool(enemy: Node):
+	if not enemy in active_enemies:
+		return
+	active_enemies.erase(enemy)
+	
+	# Turn off physics before returning to pool
+	_toggle_enemy_physics(enemy, false)
+	enemy_pool.append(enemy)
+
+# Helper function to fully mute/unmute enemy nodes
+func _toggle_enemy_physics(enemy: Node, active: bool):
+	enemy.visible = active
+	enemy.set_physics_process(active)
+	enemy.set_process(active)
+	
+	# Disable the Area2Ds or the main Collision Shapes
+	var hitbox = enemy.get_node_or_null("HitBox")
+	var hurtbox = enemy.get_node_or_null("HurtBox")
+	
+	if hitbox:
+		if not enemy.is_inside_tree():
+			hitbox.monitoring = active
+			hitbox.monitorable = active
+		else:
+			hitbox.set_deferred("monitoring", active)
+			hitbox.set_deferred("monitorable", active)
+	if hurtbox:
+		if not enemy.is_inside_tree():
+			hurtbox.monitoring = active
+			hurtbox.monitorable = active
+		else:
+			hurtbox.set_deferred("monitoring", active)
+			hurtbox.set_deferred("monitorable", active)
+
+
 func get_spawn_position() -> Vector2:
 	#Get a random spawn position around the player or scene”””
 	var spawn_pos: Vector2
+	var player= GameManager.player
 	if player:
 		# Spawn around player
 		var angle = randf() * TAU
@@ -66,22 +101,6 @@ func get_spawn_position() -> Vector2:
 	)
 
 	return spawn_pos
-
-
-func return_enemy_to_pool(enemy: Node):
-	#Return an enemy to the pool”””
-	if not enemy in active_enemies:
-		return
-	# Remove from active list
-	active_enemies.erase(enemy)
-
-	# Deactivate enemy
-	enemy.visible = false
-	enemy.set_physics_process(false)
-	enemy.set_process(false)
-
-	# Return to pool
-	enemy_pool.append(enemy)
 
 func _on_spawn_timer_timeout():
 	#Called when spawn timer times out”””

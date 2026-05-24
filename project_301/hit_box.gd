@@ -1,10 +1,12 @@
-extends StaticBody2D
-#this is an example wall or obstacle, has ysort so the character should go behind or front
-#depending on height
+# enemy_hitbox.gd
+extends Area2D
+
+@export var damage: float = 15.0
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	self.add_to_group("obstacles")
+	pass # Replace with function body.
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

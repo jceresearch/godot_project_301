@@ -1,30 +1,31 @@
 extends CharacterBody2D
 #player.gd
+@export var bullet_scene: PackedScene
+@export var fire_rate: float = 0.25
+var _can_shoot: bool = true
 
-@onready var hud = get_node("/root/World/Hud")
-@onready var hurtbox: Area2D = $Hurtbox  # This is what enemies will detect
-var MAX_SPEED: float = 3000.0
+
+@onready var hurtbox: Area2D = $HurtBox  # This is what enemies will detect
+var MAX_SPEED: float = 1000.0
 var MIN_SPEED: float=100.0
-var ACCELERATION_FACTOR: float=1.01 # coefficient for the acceleration curve
-var DRAG_FACTOR: float=.99 # coefficient for the deacceleration curve
-var current_speed: float=0.0
-var current_drag: float=0.0
-var current_acceleration: float = 0.0
+var MAX_HEALTH: float = 100.0
 
-# Player stats
-@export var MAX_HEALTH: float = 100.0
+var ACCELERATION: float = 50.0 # Gain X pixels/sec
+var FRICTION: float = 200.0  # Lose X pixels/sec when stopping
 
 
 # Current stats
+var current_speed: float=0.0
+var current_drag: float=0.0
+var current_acceleration: float = 0.0
 var current_health: float=0
 var is_alive: bool = true
+var last_dir: Vector2 = Vector2.RIGHT
+
 
 # Damage immunity (prevent spam damage)
 var is_immune: bool = false
 var IMMUNITY_DURATION: float = 1.0	# 1 second of immunity after taking damage
-
-# References
-@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var immunity_timer: Timer = Timer.new()
 
 # Signals (optional - for UI updates, game over, etc.)
@@ -32,47 +33,34 @@ signal health_changed(new_health: float, max_health: float)
 signal player_died
 
 # Dash settings
-var DASH_MULTIPLIER: float = 1.05	# how strong the boost is
-var DASH_TIME: float = 0.15			# seconds the boost lasts
-var DASH_COOLDOWN: float = 0.6		# seconds before next dash
+var DASH_MULTIPLIER: float = 1.2 	# how strong the boost is
+var DASH_TIME: float = 2.0			# seconds the boost lasts
+var DASH_COOLDOWN: float = 2.0		# seconds before next dash
+var PANT_DURATION: float = 0.5 # seconds for panting after dash
 var _is_dashing: bool = false
+var _is_panting: bool = false
 var _dash_ready_at: float = 0.0		# unixtime (seconds) cooldown
 @onready var swoosh: AudioStreamPlayer2D = $SwooshSound
 
-
+# Animation related
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 # Controls how strongly velocity affects animation speed
 var ANIM_SPEED_BASE: float = 1.0	# normal playback at walking speed
 var ANIM_SPEED_FACTOR: float = 0.02
 var ANIM_SPEED_TOP_FACTOR: float= 3.0
 var UPPER_MAGNITUDE: float= 800.0
 var LOWER_MAGNITUDE: float = 100.0
-
 @onready var DEFAULT_MODULATE_COLOR: Color
 
-func increase_acceleration(increase)->float:
-	if increase==null:
-		current_acceleration=1
-		return current_acceleration
-	if increase and current_acceleration>0:
-		current_acceleration=current_acceleration*ACCELERATION_FACTOR
-	else:
-		current_acceleration=ACCELERATION_FACTOR
-	return current_acceleration
-	
-func increase_drag(increase)->float:
-	if increase==null:
-		current_drag=1
-		return current_drag
-	if increase and current_drag>0:
-		current_drag=current_drag*DRAG_FACTOR
-	else:
-		current_drag=DRAG_FACTOR
-	return current_drag
+func _enter_tree() -> void:
+	GameManager.player = self
 
+func _exit_tree() -> void:
+	if GameManager.player == self:
+		GameManager.player = null
 
 func _ready():
-	self.add_to_group("player")
 	current_health = MAX_HEALTH
 	current_speed=MIN_SPEED
 	DEFAULT_MODULATE_COLOR=self.modulate
@@ -84,78 +72,20 @@ func _ready():
 	hurtbox.add_to_group("player_hurtbox")
 	# Disable Y-sorting to avoid conflicts
 	hurtbox.y_sort_enabled = false
-	
-func _physics_process(_delta: float) -> void:
-	var dir := Vector2(
-		Input.get_action_strength("move_right") - Input.get_action_strength("move_left"),
-		Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
-	)
-	if Input.is_action_just_pressed("reset_position"):
-		global_position=Vector2i(0,0)
-		velocity=Vector2(0,0)
-		current_speed=0
-		increase_drag(null)
-		increase_acceleration(null)
+	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
+	print("Finished getting the player ready")
+func _on_hurtbox_area_entered(area: Area2D) -> void:
+	print("Something entered hurtbox area",area.name)
+	if not is_alive or is_immune:
 		return
-		
-	if dir.length() > 1.0:
-		dir = dir.normalized() #  so diagonals aren't faster
-		
-	if Input.is_action_just_pressed("dash") and not _is_dashing and dir != Vector2.ZERO and Time.get_unix_time_from_system() >= _dash_ready_at:
-		_do_dash(dir)
-	
-		
-	# If dashing, give the speed a stronger push while the dash is active
-	if _is_dashing:
-		current_speed = clamp(current_speed * DASH_MULTIPLIER, MIN_SPEED, MAX_SPEED)
-	else:
-		current_speed= clamp(current_speed * current_acceleration * current_drag ,MIN_SPEED,MAX_SPEED)
+	if "damage" in area:
+		take_damage(area.damage)
 
 	
-	
-	
-	if dir == Vector2.ZERO:
-		_play_if_needed("lotti_idle_right") # pick your default idle
-		anim.speed_scale = 1.0
-		
-	else:
-		# Pick facing by the dominant axis
-		if abs(dir.x) > abs(dir.y):
-			if dir.x > 0.0:
-				_play_if_needed("lotti_run_right")
-			else:
-				
-				_play_if_needed("lotti_run_right",true)
-		else:
-			if dir.y > 0.0:
-				_play_if_needed("lotti_run_front")
-			else:
-				_play_if_needed("lotti_run_up")
 
 
 
-		# Scale FPS with movement speed
-		var vel_magnitude := velocity.length()
-		#anim.speed_scale = anim_speed_base + vel_magnitude * anim_speed_factor
-		#var K := 100	# steepness factor
-		#anim.speed_scale = anim_speed_base + (1.0 / (1.0 + exp(-k * (vel_magnitude - 500.0)))) * anim_speed_factor * 10.0 # s curve
-		#anim.speed_scale = anim_speed_base + log(1.0 + K+vel_magnitude) * anim_speed_factor # logarithmic
-		var span= (UPPER_MAGNITUDE-LOWER_MAGNITUDE) * .8 #slight overshoot in span acceleration
-		if vel_magnitude < LOWER_MAGNITUDE:
-			anim.speed_scale = ANIM_SPEED_BASE
-		elif vel_magnitude < UPPER_MAGNITUDE:
-			anim.speed_scale = lerp(ANIM_SPEED_BASE,ANIM_SPEED_TOP_FACTOR , (vel_magnitude - LOWER_MAGNITUDE) / span)
-		else:
-			anim.speed_scale = UPPER_MAGNITUDE
-		
-	hud.update_speed_display(current_speed,_is_dashing)
-	
-	
-	velocity = dir * current_speed
-	move_and_slide()
-	
-	
-	
+
 func _play_if_needed(animation_name: String, flip_h:bool=false) -> void:
 	if anim.animation != animation_name or anim.is_playing or anim.flip_h != flip_h :
 		anim.flip_h=flip_h
@@ -171,12 +101,7 @@ func _do_dash(dir: Vector2) -> void:
 	velocity = dir * min(current_speed * DASH_MULTIPLIER, MAX_SPEED)
 	# End dash after dash_time, then start cooldown
 	_end_dash_later()
-
-func _end_dash_later() -> void:
-	await get_tree().create_timer(DASH_TIME).timeout
-	_is_dashing = false
-	_dash_ready_at = Time.get_unix_time_from_system() + DASH_COOLDOWN
-
+	
 
 func take_damage(amount: float):
 	"""Make the player take damage"""
@@ -236,7 +161,6 @@ func die():
 	current_health = 0
 	if hurtbox:
 		hurtbox.monitorable = false
-	
 	print("Player died!")
 	
 	# Death visual effects
@@ -279,3 +203,116 @@ func get_hurtbox() -> Area2D:
 func is_player_alive() -> bool:
 	return is_alive
 	
+
+
+@onready var hud=GameManager.hud
+
+func _physics_process(delta: float) -> void:
+	var dir := Vector2(
+		Input.get_action_strength("move_right") - Input.get_action_strength("move_left"),
+		Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+	).normalized()
+	hud.get_node("SpeedLabel").text = str(dir.x) + " " + str(dir.y)
+
+	if dir != Vector2.ZERO:
+		last_dir = dir
+
+	if Input.is_action_just_pressed("reset_position"):
+		global_position = Vector2.ZERO
+		velocity = Vector2.ZERO
+		current_speed = 0
+		current_health = MAX_HEALTH
+		return
+		
+		
+	if Input.is_action_just_pressed("fire") and _can_shoot and is_alive:
+		_shoot()
+	# Added condition to prevent dashing while panting
+	if Input.is_action_just_pressed("dash") and not _is_dashing and not _is_panting and dir != Vector2.ZERO and Time.get_unix_time_from_system() >= _dash_ready_at:
+		_do_dash(dir)
+	
+	if _is_dashing:
+		current_speed = clamp(current_speed * DASH_MULTIPLIER, MIN_SPEED, MAX_SPEED)
+	elif _is_panting:
+		# Rapidly scale speed down to zero
+		current_speed = move_toward(current_speed, 0.0, FRICTION * 8.0 * delta)
+	else:
+		if dir != Vector2.ZERO:
+			current_speed += ACCELERATION * delta
+			if current_speed < MIN_SPEED:
+				current_speed = MIN_SPEED
+		else:
+			current_speed -= FRICTION * delta
+			
+		current_speed = clamp(current_speed, 0, MAX_SPEED)
+
+	velocity = last_dir * current_speed
+	
+	# Handle panting animation state when completely stopped
+	if _is_panting and current_speed == 0:
+		if last_dir.x < 0.0:
+			_play_if_needed("lotti_idle_right", true)
+		else:
+			_play_if_needed("lotti_idle_right", false)
+		anim.speed_scale = 1.0
+	elif current_speed == 0:
+		_play_if_needed("lotti_idle_right")
+		anim.speed_scale = 1.0
+	else:
+		if abs(last_dir.x) > abs(last_dir.y):
+			if last_dir.x > 0.0:
+				_play_if_needed("lotti_run_right")
+			else:
+				_play_if_needed("lotti_run_right", true)
+		else:
+			if last_dir.y > 0.0:
+				_play_if_needed("lotti_run_front")
+			else:
+				_play_if_needed("lotti_run_up")
+
+		var vel_magnitude := velocity.length()
+		var span = (UPPER_MAGNITUDE - LOWER_MAGNITUDE) * 0.8
+		
+		if vel_magnitude < LOWER_MAGNITUDE:
+			anim.speed_scale = ANIM_SPEED_BASE
+		elif vel_magnitude < UPPER_MAGNITUDE:
+			anim.speed_scale = lerp(ANIM_SPEED_BASE, ANIM_SPEED_TOP_FACTOR, (vel_magnitude - LOWER_MAGNITUDE) / span)
+		else:
+			anim.speed_scale = ANIM_SPEED_TOP_FACTOR
+
+	move_and_slide()
+
+func _shoot() -> void:
+	if not bullet_scene:
+		return
+	
+	_can_shoot = false
+	var bullet = bullet_scene.instantiate()
+	
+	# Spawn bullet at player position and face movement direction
+	bullet.global_position = global_position
+	bullet.direction = last_dir
+	bullet.rotation = last_dir.angle()
+	
+	# Add bullet to main scene tree so it moves independently of player
+	get_tree().current_scene.add_child(bullet)
+	
+	# Handle Cooldown
+	await get_tree().create_timer(fire_rate).timeout
+	_can_shoot = true
+	
+	
+func _end_dash_later() -> void:
+	await get_tree().create_timer(DASH_TIME).timeout
+	_is_dashing = false
+	_is_panting = true
+	
+	# Wait here until physics process brings speed down to 0
+	while current_speed > 0:
+		await get_tree().process_frame
+	
+	# Run the panting animation state for exactly 1 second
+	await get_tree().create_timer(PANT_DURATION).timeout
+	
+	_is_panting = false
+	_dash_ready_at = Time.get_unix_time_from_system() + DASH_COOLDOWN
