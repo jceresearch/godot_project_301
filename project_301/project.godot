@@ -76,28 +76,28 @@ renderer/rendering_method="mobile"
 
 project/editorState=[{
 "column": 0,
-"line": 215,
+"line": 0,
 "path": "res://player.gd",
 "type": "file"
 }, {
 "column": 0,
-"line": 18,
+"line": 0,
 "path": "res://bullet.gd",
 "type": "file"
 }, {
 "column": 0,
-"current": true,
 "line": 0,
 "path": "res://hit_box.gd",
 "type": "file"
 }, {
-"column": 0,
-"line": 0,
+"column": 12,
+"line": 123,
 "path": "res://enemy.gd",
 "type": "file"
 }, {
 "column": 0,
-"line": 0,
+"current": true,
+"line": 16,
 "path": "res://hurt_box.gd",
 "type": "file"
 }, {

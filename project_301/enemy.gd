@@ -116,6 +116,11 @@ func _on_area_2d_body_entered(body):
 			# Optionally die after hitting player
 			# die()
 
-
+func can_take_damage() -> bool:
+	if not is_alive:
+		return false
+	#we can get here some code for cooldown or slight immunity
+    #say just respawn or doing something we want some immunity
+	return true	
 		
 

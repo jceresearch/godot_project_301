@@ -9,7 +9,8 @@ func _ready() -> void:
 	
 func _on_area_entered(area: Area2D) -> void:
 	if area is Bullet:
-		if parent_entity.can_take_damage() and parent_entity.is_alive:
+		print("_on_area_entered:Got a bullet")
+		if parent_entity.can_take_damage():
 			parent_entity.take_damage(area.damage)
 			area.resolve_hit()
 			
