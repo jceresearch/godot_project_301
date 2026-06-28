@@ -209,6 +209,10 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wse8f"]
 size = Vector2(20, 56)
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_efxa6"]
+radius = 14.0
+height = 46.0
+
 [node name="Main" type="Node2D" unique_id=1140799641]
 y_sort_enabled = true
 
@@ -319,6 +323,7 @@ pitch_scale = 0.9
 attenuation = 2.0
 
 [node name="HurtBox" type="Area2D" parent="Player" unique_id=864604577]
+visible = false
 position = Vector2(0, -1)
 collision_layer = 16
 collision_mask = 128
@@ -327,3 +332,9 @@ collision_mask = 128
 position = Vector2(2.3841858e-07, -1.9999995)
 scale = Vector2(0.39094335, 0.84979135)
 shape = SubResource("RectangleShape2D_wse8f")
+
+[node name="AuraBox" type="Area2D" parent="Player" unique_id=922225598]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/AuraBox" unique_id=900397205]
+position = Vector2(0, -9)
+shape = SubResource("CapsuleShape2D_efxa6")

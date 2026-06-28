@@ -58,7 +58,7 @@ func return_enemy_to_pool(enemy: Node):
 	enemy_pool.append(enemy)
 
 # Helper function to fully mute/unmute enemy nodes
-func _toggle_enemy_physics(enemy: Node, active: bool):
+func _toggle_enemy_physics_old(enemy: Node, active: bool):
 	enemy.visible = active
 	enemy.set_physics_process(active)
 	enemy.set_process(active)
@@ -81,6 +81,27 @@ func _toggle_enemy_physics(enemy: Node, active: bool):
 		else:
 			hurtbox.set_deferred("monitoring", active)
 			hurtbox.set_deferred("monitorable", active)
+
+func _toggle_enemy_physics(enemy: Node, active: bool) -> void:
+	enemy.visible = active
+	# Master switch: freezes _process, _physics_process, timers, and anims
+	enemy.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+	# 1. Disable the root physical body
+	var body_col: CollisionShape2D = enemy.get_node_or_null("CollisionShape2D")
+	if body_col:
+		body_col.set_deferred("disabled", not active)
+	# 2. Disable the trigger areas
+	for area_name in ["HitBox", "HurtBox"]:
+		var area: Area2D = enemy.get_node_or_null(area_name)
+		if area:
+			area.set_deferred("monitoring", active)
+			area.set_deferred("monitorable", active)
+			
+	# 3. Safety net: warp pooled objects far away
+	if not active and enemy is Node2D:
+		enemy.global_position = Vector2(-9999, -9999)
+
+
 
 
 func get_spawn_position() -> Vector2:

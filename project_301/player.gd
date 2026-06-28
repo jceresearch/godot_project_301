@@ -6,6 +6,7 @@ var _can_shoot: bool = true
 
 
 @onready var hurtbox: Area2D = $HurtBox  # This is what enemies will detect
+@onready var aurabox: Area2D = $AuraBox # This is an extra area to detect less physical bumps 
 var MAX_SPEED: float = 1000.0
 var MIN_SPEED: float=100.0
 var MAX_HEALTH: float = 100.0
@@ -73,16 +74,23 @@ func _ready():
 	# Disable Y-sorting to avoid conflicts
 	hurtbox.y_sort_enabled = false
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
-	print("Finished getting the player ready")
+	aurabox.y_sort_enabled= false
+	aurabox.area_entered.connect(_on_aurabox_area_entered)
+	aurabox.body_entered.connect(_on_aurabox_body_entered)
+    
 func _on_hurtbox_area_entered(area: Area2D) -> void:
-	print("Something entered hurtbox area",area.name)
+	#print("Something entered hurtbox area",area.name)
 	if not is_alive or is_immune:
 		return
 	if "damage" in area:
 		take_damage(area.damage)
 
-	
-
+func _on_aurabox_area_entered(area: Area2D) -> void:
+	#print("Something entered player bumpbox area", area.name)
+	pass
+func _on_aurabox_body_entered(body: Node2D) -> void:
+	#print("A body entered player bumpbox area", body.name)
+	pass
 
 
 
@@ -281,6 +289,14 @@ func _physics_process(delta: float) -> void:
 			anim.speed_scale = ANIM_SPEED_TOP_FACTOR
 
 	move_and_slide()
+	_debug_collisions()
+
+func _debug_collisions() -> void:
+	for i in get_slide_collision_count():
+		var col := get_slide_collision(i)
+		var collider := col.get_collider()
+		#print("Player physically bumped: ", collider.name)
+
 
 func _shoot() -> void:
 	if not bullet_scene:
